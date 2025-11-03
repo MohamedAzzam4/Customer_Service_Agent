@@ -1,0 +1,1023 @@
+{
+  "name": "Sanad_Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -608,
+        -96
+      ],
+      "id": "63826f61-d608-4d8e-84cc-c0e616d6e48d",
+      "name": "Telegram Trigger",
+      "webhookId": "1a0dc99d-f72a-43b6-aad6-ce066e5ce598",
+      "credentials": {
+        "telegramApi": {
+          "id": "dPNkNesw6cRymWz6",
+          "name": "Sanad"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $node[\"AI Agent\"].json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1936,
+        -80
+      ],
+      "id": "3151fdf9-76d4-4008-985d-7c17d823a2d2",
+      "name": "Send a text message",
+      "webhookId": "d7140ec4-1128-4e14-a452-c248ca762461",
+      "credentials": {
+        "telegramApi": {
+          "id": "dPNkNesw6cRymWz6",
+          "name": "Sanad"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.error }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1600,
+        64
+      ],
+      "id": "55e5d595-7e6d-4501-8948-9576f002b2bc",
+      "name": "Send a text message1",
+      "webhookId": "d7140ec4-1128-4e14-a452-c248ca762461",
+      "credentials": {
+        "telegramApi": {
+          "id": "dPNkNesw6cRymWz6",
+          "name": "Sanad"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[3].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        80
+      ],
+      "id": "c1886690-7c5c-49f0-9544-09fb14847a28",
+      "name": "Get a file",
+      "webhookId": "1207a2aa-e712-4741-9690-10d68e4455bd",
+      "credentials": {
+        "telegramApi": {
+          "id": "dPNkNesw6cRymWz6",
+          "name": "Sanad"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Any kind of receipt, like a screenshot or an actual receipt, is acceptable and say Here is the receipt\nIf it is a receipt or screenshot from Instapay, Vodafone Cash, or any related receipt\nExtract the following:\nsender number:\nsender name or email:\ntime:\nReceiver Number:\nAmount:\n\nif this is not relative say that",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        32,
+        80
+      ],
+      "id": "f248df28-a261-48e6-a37f-6305d281318c",
+      "name": "Analyze an image",
+      "retryOnFail": false,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "THgdiZacLRuL5wW5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe1dc71a-e287-4c0e-8042-ce57272087d2",
+              "name": "text",
+              "value": "=caption_of_user: {{ $('Telegram Trigger').item.json.message.caption }}\n\nAI_Response and this is not user message:{{ $('Analyze an image').item.json.content.parts[0].text }} \n\nuser didn't provide this description there another ai with you did this jop before you\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        80
+      ],
+      "id": "b64231d5-cbbc-49a5-b175-e7f4222996de",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=user_text_message {{ $json.text }}",
+        "options": {
+          "systemMessage": "=أنت \"سانَد\" — مساعد ذكي لخدمة عملاء جمعية صُنّاع الحياة – المحلة الكبرى (Life Makers El-Mahalla El Kubra). تتحدث باللهجة المصرية البسيطة بطريقة ودودة ومهذبة.\n\nالمهام:\n\nتجاوب على أي أسئلة عن الجمعية أو أنشطتها من خلال قاعدة البيانات اللي عندك في superbase Vector Store\nاستخدم قاعدة البيانات في حالة السؤال عن نوايا التبرع المتاحة\n\nلما حد يسأل عن التبرع، قول له: \"ممكن تتبرع عن طريق فودافون كاش على الرقم \"01096711372\"، واطلب منه يبعت صورة أو إيصال التحويل ومعاه النية.\nممكن يتبرع من خلال الحساب البنكي و هات معلوماته من قاعدة البيانات\n\nلا يتم تسجيل أي تبرع بدون صورة فيها تأكيد التحويل. و تأكد ان الرقم المحول له الفلوس هو رقم الجمعية الرسمي \"01096711372\"\n\nبعد استلام الصورة، هيوصلك معاها سطر بالشكل ده:\n\"المعلومات من الصورة: [النص المستخرج أو فاضي لو مفيش]\"\n\nلو فيه بيانات، استخرج منها المبلغ والتاريخ.\n\nاستخدم الأداة التانية لتسجيل البيانات في Google Sheets في الأعمدة التالية (بنفس أسمائها بالإنجليزية):\n\nClient\n\nDonation\n\nIntention\n\nReciept time from them image\n\nلو مفيش صورة أو البيانات ناقصة، اطلب من المستخدم يبعتهالك تاني.\n\nدائما تأكد من الرقم المرسل اليه الاموال هل يطابق رقم الجميعة ام لا , اذا لم يطابق قم بالتأكد من المستخدم\nتأكد قبل تسجيل التبرع من النية الخاصة بالتبرع\n\nخليك دايمًا إيجابي، مختصر قليلا، وتشجع المستخدم على فعل الخير بلُطف. و مش دايما لازم ترحب في بداية كل رسالة , استخدم ايموشنات من حين لاخر\n\nStrict Rule: لا تسجل التبرع الا اذا تم توضيح النية\nStrict Rule: مع كل صورة او تبرع جديد قم بسؤال المتبرع عن نيتها\n\nClient Name: {{ $('Telegram Trigger').item.json.message.from.first_name }} {{ $('Telegram Trigger').item.json.message.from.last_name }}\n\nStrict Rule: استخدم اداة Date & Time لتسيجيل وقت الرسالة عندما تريد تسجيل التبرع في جوجل شتيس\nExample for Time & Date Format: 11/2/2025 6:11:00",
+          "maxIterations": 3,
+          "returnIntermediateSteps": false,
+          "enableStreaming": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        832,
+        0
+      ],
+      "id": "c4f9d7ae-7bf6-4bdf-9ea7-5dfedbcbfd58",
+      "name": "AI Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "b3ce64f0-bca1-4c59-8f75-8f3398dbe970"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7fadff17-dc64-46b6-9371-9bff96994641",
+                    "leftValue": "={{ $json.message.photo[0] }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "photo"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -352,
+        -96
+      ],
+      "id": "71706587-e837-4d4d-9bbc-f9e9225c709d",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "يستخدم لتسجيل التبرع مع النية و الوقت الحالي و وقت ايصال التبرع و اسم المتبرع\nاستخدمها عندما تصل لك التفاصيل من خلال تحليل صورة قبلها\nتستخدم لتخزينها في مخزن البيانات الخاص بالجمعية\n\nStrict Rule: لا تسجل التبرع الا اذا تم توضيح النية\nStrict Rule: اذا ارسل لك المتبرع صورة جديدة قم بالتأكد منه هل هي نفس النية القديمة ام يريد تغيرها",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1zx85rUiefWMD9ybQXXGQhUfJWMa81GegTHuJ-Ukvu6k",
+          "mode": "list",
+          "cachedResultName": "n8n-test",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zx85rUiefWMD9ybQXXGQhUfJWMa81GegTHuJ-Ukvu6k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zx85rUiefWMD9ybQXXGQhUfJWMa81GegTHuJ-Ukvu6k/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Client": "={{ $fromAI('Client', `Client Name that provided to you`, 'string') }}",
+            "Donation": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Donation', `Amount of money extracted from the photo`, 'string') }}",
+            "intention": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('intention', `النية مثال , اطعام , وصلات , مشروع , سقف , تكافل او كفالة\nلو لم يتم توضيحها يجب سؤال المتبرع مرة اخرى`, 'string') }}",
+            "Reciept time from them image": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Reciept_time_from_them_image', `الوقت الموجود من الصورة التي تم تحليلها\nاذا لم يكن هناك وقت في الصورة فقم بملء الخانة انه لم يتم تحديد الوقت و لا حاجة لسؤال المستخدم عن الوقت`, 'string') }}",
+            "Message time now": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_time_now', `Use Time & Date Tool to get the current time for the message.`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Client",
+              "displayName": "Client",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Donation",
+              "displayName": "Donation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "intention",
+              "displayName": "intention",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message time now",
+              "displayName": "Message time now",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reciept time from them image",
+              "displayName": "Reciept time from them image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        1328,
+        288
+      ],
+      "id": "21e7fc56-37d8-4322-aace-013f10ed39d8",
+      "name": "Append row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5V2DyOnj0nrjuCa4",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=شكرا ليك تم استلام الصورة و جاري التأكد منها و تسجيلها",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        80
+      ],
+      "id": "58275e93-28f9-48e3-8566-21a4d78c8ea5",
+      "name": "Send a text message2",
+      "webhookId": "d7140ec4-1128-4e14-a452-c248ca762461",
+      "credentials": {
+        "telegramApi": {
+          "id": "dPNkNesw6cRymWz6",
+          "name": "Sanad"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=نعتذر و لكن نواجه مشكلة في استلام الصورة نرجو ارسال الصورة بعدقيقة حتى يتم حل المشكلة التقنية و شكرا لتفهمكم",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        224
+      ],
+      "id": "ac6b43d0-e628-4878-b87d-186b97c498ad",
+      "name": "Send a text message3",
+      "webhookId": "d7140ec4-1128-4e14-a452-c248ca762461",
+      "credentials": {
+        "telegramApi": {
+          "id": "dPNkNesw6cRymWz6",
+          "name": "Sanad"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1600,
+        -80
+      ],
+      "id": "90487fac-8724-4e45-991e-de23db347119",
+      "name": "Send a chat action",
+      "webhookId": "e6dfbde5-5dd5-4c8a-9193-a87581a63572",
+      "credentials": {
+        "telegramApi": {
+          "id": "dPNkNesw6cRymWz6",
+          "name": "Sanad"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        -80
+      ],
+      "id": "24a9382e-148c-46dd-9929-ba75008bc356",
+      "name": "Wait",
+      "webhookId": "bbfdc211-90e8-44a4-afca-7edeb5a8a7c3",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}\n{{ $('Telegram Trigger').item.json.message.from.first_name }}{{ $('Telegram Trigger').item.json.message.from.last_name }}\n    ",
+        "tableName": "n8n_chat_histories_sanad_test",
+        "contextWindowLength": 3
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        688,
+        336
+      ],
+      "id": "f0ba0474-dfac-4058-a899-b8c374a7afe6",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "1XtRzBNg5stPCDyg",
+          "name": "sanad_agent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "استخدم هذة الاداة دائما\nالاداة تستخدمها عند الاجابة عن المعلومات الخاصة بالجمعية\nاو عن الاجابة عن الاسئلة الخاصة بالنوايا المتاحة للتبرع",
+        "tableName": {
+          "__rl": true,
+          "value": "LM_RAG_Test",
+          "mode": "list",
+          "cachedResultName": "LM_RAG_Test"
+        },
+        "useReranker": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1008,
+        384
+      ],
+      "id": "fd773ea1-c8d5-4489-bc4e-fe2e1d6a31fa",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "PJY6Th1LLncUxJ6B",
+          "name": "sanad_vector_store"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        -368
+      ],
+      "id": "d314d512-de20-4094-a0dc-a4680126bd17",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "THgdiZacLRuL5wW5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.rerankerCohere",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        608
+      ],
+      "id": "683eb392-cbd2-4dec-ae8a-5faa0ccd7a6f",
+      "name": "Reranker Cohere",
+      "credentials": {
+        "cohereApi": {
+          "id": "yJevfEDGWHFEtRfX",
+          "name": "CohereApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -128,
+        -352
+      ],
+      "id": "27f678cb-ef6b-4722-8d80-0bda0f6383f0",
+      "name": "Send a chat action1",
+      "webhookId": "e6dfbde5-5dd5-4c8a-9193-a87581a63572",
+      "credentials": {
+        "telegramApi": {
+          "id": "dPNkNesw6cRymWz6",
+          "name": "Sanad"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -336,
+        -352
+      ],
+      "id": "24878f28-55fa-4a6b-8e53-40d7b1db013f",
+      "name": "Wait1",
+      "webhookId": "bbfdc211-90e8-44a4-afca-7edeb5a8a7c3",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "LM_RAG_Test",
+          "mode": "list",
+          "cachedResultName": "LM_RAG_Test"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        -688
+      ],
+      "id": "6f74ea8c-adab-4632-912f-70a286c96fab",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "PJY6Th1LLncUxJ6B",
+          "name": "sanad_vector_store"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "loader": "pdfLoader",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1168,
+        -560
+      ],
+      "id": "14d18ed8-92e4-4e57-b53a-5ca84e0e4421",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "separator": "]end[",
+        "chunkSize": 100
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        -368
+      ],
+      "id": "5948995c-2852-47e1-851e-1ca48a455716",
+      "name": "Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1tRnr6cYv5cVtEHt16fNJZ4LPod2iqhSC",
+          "mode": "list",
+          "cachedResultName": "Life-Makers-RAG-Data.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1tRnr6cYv5cVtEHt16fNJZ4LPod2iqhSC/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        832,
+        -688
+      ],
+      "id": "9017d038-4ac6-4caa-b94c-0e8d1b72141f",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "CmZld0xIN9zkhulY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        544,
+        272
+      ],
+      "id": "d6ca0df4-8c1e-4b5c-aef7-e2442d5b2e4a",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "thS4sRK3aRlG1TH6",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        960,
+        608
+      ],
+      "id": "ebb472e2-69bb-4abb-895b-c555a2d0bc8b",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "THgdiZacLRuL5wW5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Upload Documents\n",
+        "height": 544,
+        "width": 752,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        672,
+        -752
+      ],
+      "typeVersion": 1,
+      "id": "b9c05a0e-acf2-45f7-b8d5-f214f2eb16a0",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use it to get the current time of the Message when recording any donation in a Google sheet",
+        "outputFieldName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Output_Field_Name', ``, 'string') }}",
+        "options": {
+          "timezone": "Africa/Cairo"
+        }
+      },
+      "type": "n8n-nodes-base.dateTimeTool",
+      "typeVersion": 2,
+      "position": [
+        864,
+        352
+      ],
+      "id": "61ace39e-befe-4c77-84cc-2e0f0066a03e",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe1dc71a-e287-4c0e-8042-ce57272087d2",
+              "name": "text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        -96
+      ],
+      "id": "f2ad5b28-07b3-4050-b642-47e0151a5bbb",
+      "name": "Edit Fields1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a chat action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a chat action": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reranker Cohere": {
+      "ai_reranker": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_reranker",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a chat action1": {
+      "main": [
+        []
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Send a chat action1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "main": [
+        []
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3bef014a-850f-4179-9f89-0a4e1ca5f735",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ef71838c77e8d632f521455a308844c6dcfd5099a0e10b7af37860f5258a3fe"
+  },
+  "id": "q3Psy5bVhKZLNd3g",
+  "tags": []
+}
