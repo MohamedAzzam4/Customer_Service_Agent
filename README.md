@@ -3,7 +3,7 @@
 ## 🎯 Project Objective
 
 This project details the development of "SANAD," a **sophisticated** AI agent created for the Life Makers Charity. The primary goal is to automate client interactions, **streamline** the donation collection process, and provide **instantaneous**, accurate information to users engaging with the charity.
-
+![SANAD Agent Architecture](assets/agent-workflow.jpg)
 ## ✨ Key Features
 
 * **Intelligent Interaction:** The agent engages in **dynamic** conversations to guide users through the donation process and answer inquiries about the charity's activities.
